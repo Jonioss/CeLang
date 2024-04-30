@@ -156,6 +156,7 @@ CeLang currently supports all 2-input Gates:
 - x NOR y
 - x XOR y
 - x XNOR y
+
 where x and y are Integer Variables, Integer Constants or Integer Expressions.
 
 ## Future
