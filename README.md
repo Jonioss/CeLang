@@ -151,7 +151,7 @@ CeLang > hi;
 CeLang currently supports all 2-input Gates:
 - x AND y
 - x OR y
-- NOT x
+- x NOT
 - x NAND y
 - x NOR y
 - x XOR y
