@@ -7,6 +7,7 @@ class CertaintyLexer(Lexer):
         FOR, WHILE, DO, FUN, TO, ARROW, EQEQ,
         BIGGER, BIGGEREQ, SMALLEREQ, SMALLER,
         GAND, GOR, GNAND, GNOR, GXOR, GXNOR,
+        GMUX2X1,GMUX4X1,BINVERTER,BINADDER,BINSUBTRACTOR,
         GNOT, BIN, PRINT, EXIT
         }
     ignore = '\t '
@@ -25,6 +26,13 @@ class CertaintyLexer(Lexer):
     GXOR = r'XOR'
     GXNOR = r'XNOR'
     GNOT = r'NOT|!'
+    
+    GMUX2X1=r'MUX2X1'
+    GMUX4X1=r'MUX4X1'
+    BINVERTER=r'BINVERTER'
+    BINADDER=r'BINADDER'
+    BINSUBTRACTOR=r'BINSUBTRACTOR'
+    
     BIN = r'BIN'
     IF = r'IF'
     THEN = r'THEN'
@@ -180,9 +188,26 @@ class CertaintyParser(Parser):
     @_('expr GXNOR expr')
     def logic(self, p):
         return ('gxnor', p.expr0, p.expr1)
-    @_('GNOT expr')
+    @_('expr GNOT')
     def logic(self, p):
         return ('gnot', p.expr)
+    
+    @_('expr "," expr GMUX2X1 expr')
+    def logic(self,p):
+        return ('gmux2x1',p.expr0,p.expr1,p.expr2)
+    @_('expr "," expr "," expr "," expr GMUX4X1 expr "," expr')
+    def logic(self,p):
+        return ('gmux4x1',p.expr0,p.expr1,p.expr2,p.expr3, p.expr4, p.expr5)        
+    @_('expr BINVERTER')
+    def logic(self, p):
+        return ('binverter', p.expr)
+    @_('expr BINADDER expr')
+    def logic(self, p):
+        return ('binadder', p.expr0, p.expr1)
+    @_('expr BINSUBTRACTOR expr')
+    def logic(self, p):
+        return ('binsubtractor', p.expr0, p.expr1)    
+    
     @_('BIN expr')
     def statement(self, p):
         return ('bin', p.expr)
@@ -329,12 +354,60 @@ class CertaintyExecute:
             if (self.walkTree(node[1]) == 0 and self.walkTree(node[2]) == 0) or (self.walkTree(node[1]) != 0 and self.walkTree(node[2]) != 0):
                 i = 1
             return i
+        
+        if node[0]=='gmux2x1':
+            if self.walkTree(node[3]) == 0: return self.walkTree(node[1])
+            if self.walkTree(node[3])==1: return self.walkTree(node[2])
+            return 0
+        if node[0]=='gmux4x1':
+            if self.walkTree(node[5])==0 and self.walkTree(node[6])==0: return self.walkTree(node[1])
+            if self.walkTree(node[5])==0 and self.walkTree(node[6])==1: return self.walkTree(node[2])
+            if self.walkTree(node[5])==1 and self.walkTree(node[6])==0: return self.walkTree(node[3])
+            if self.walkTree(node[5])==1 and self.walkTree(node[6])==1: return self.walkTree(node[4])
+            return 0
+        if node[0]=='binverter':#1s compliment of a binary number
+            val=self.walkTree(node[1])
+            l=len(str(val))
+            new=0
+            for i in range (l-1,-1,-1):
+                temp=1-(val//10**i)%10
+                new=new+temp*10**i
+            return new
+        if node[0]=='binadder' :#adds or subtracts two binary numbers
+            val1=self.walkTree(node[1])
+            val2=self.walkTree(node[2])
+            summ=0#stores the value of the sum
+            car=0#stores the value of the carry
+            val=0#stores the total number
+            maxlen=max(len(str(val1)),len(str(val2)))
+            for i in range (0,maxlen+1,1):
+                t1=(val1//(10**i))%2
+                t2=(val2//(10**i))%2
+                summ=(t1+t2+car)%2
+                car=(t1+t2+car)//2
+                val+=summ*10**(i)          
+            return val
+        if node[0]=='binsubtractor' :#subtracts two binary numbers
+            val1=self.walkTree(node[1])
+            val2=self.walkTree(node[2])
+            summ=0
+            car=1 
+            val=0
+            maxlen=max(len(str(val1)),len(str(val2)))
+            for i in range (0,maxlen+1,1):
+                t1=(val1//(10**i))%2
+                t2=1-(val2//(10**i))%2
+                summ=(t1+t2+car)%2
+                car=(t1+t2+car)//2
+                val+=summ*10**i        
+            return val%10**i
+        
         if node[0] == 'bin':
             val = self.walkTree(node[1])
             binary = bin(val)
             print(binary[2:])
             return binary
-            
+           
         if node[0] == 'add':
             return self.walkTree(node[1]) + self.walkTree(node[2])
         if node[0] == 'sub':
@@ -413,3 +486,4 @@ if __name__ == '__main__':
         if text:
             tree = parser.parse(lexer.tokenize(text))
             CertaintyExecute(tree, env)
+            
