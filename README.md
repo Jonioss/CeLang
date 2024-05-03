@@ -159,6 +159,29 @@ CeLang currently supports all 2-input Gates:
 
 where x and y are Integer Variables, Integer Constants or Integer Expressions.
 
+### Integrated Circuits:
+We have added the functionality of the following ICs:
+
+- 2x1 Multiplexer
+- 4x1 Multiplexer
+- Inverter
+- Binary Adder
+- Binary Subtractor
+
+Below are usage examples:
+```
+CeLang > 1, 0 MUX21 0
+1
+CeLang > 1, 0, 1, 0 MUX4X1 1, 0
+1
+CeLang > 100 BINVERTER
+11
+CeLang > 11 BINADDER 10
+101
+CeLang > 110 BINSUBTRACTOR 10
+100
+```
+
 ## Future
 Future updates coming soon with:
 - More Pre-Made Functions
