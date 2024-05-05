@@ -182,6 +182,22 @@ CeLang > 110 BINSUBTRACTOR 10
 100
 ```
 
+### Executing Files
+Running a .txt File is easy in CeLang:
+```
+CeLang > FILEOPEN "[path_to_file]"
+```
+Or through the Terminal / Command Prompt:
+```
+python CertaintyLang.py "[path_to_file]"
+```
+An example of a .txt File for CeLang is:
+```
+PRINT "HELLO, WORLD!"
+FUN TEST -> {I = 1; Y = I * 4; PRINT Y}
+TEST;
+```
+
 ## Future
 Future updates coming soon with:
 - More Pre-Made Functions
