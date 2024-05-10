@@ -167,7 +167,7 @@ We have added the functionality of the following ICs:
 - Inverter
 - Binary Adder
 - Binary Subtractor
-
+- Flip Flops (SR,JK,T,D)
 Below are usage examples:
 ```
 CeLang > 1, 0 MUX21 0
@@ -180,6 +180,16 @@ CeLang > 11 BINADDER 10
 101
 CeLang > 110 BINSUBTRACTOR 10
 100
+CeLang > 0,1 SRFLIPFLOP 1
+0 1
+0
+CeLang > 1,1 JKFLIPFLOP 0
+1 1
+1
+CeLang > 1 TFLIPFLOP 1
+0
+CeLang > 0 DFLIPFLOP 1
+0
 ```
 
 ### Executing Files
