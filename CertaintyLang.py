@@ -220,6 +220,7 @@ class CertaintyParser(Parser):
         return ('binsubtractor', p.expr0, p.expr1)    
 
     ## Flip-Flop simulation statements
+    ##the expression(s) before the name indicate the one or two inputs in the order of the name of the flip flop and the expression after the name is the previous value
     @_('expr DFLIPFLOP expr')
     def logic(self, p):
         return ('dff', p.expr0, p.expr1)
