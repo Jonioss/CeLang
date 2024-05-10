@@ -9,6 +9,7 @@ class CertaintyLexer(Lexer):
         BIGGER, BIGGEREQ, SMALLEREQ, SMALLER,
         GAND, GOR, GNAND, GNOR, GXOR, GXNOR,
         GMUX2X1,GMUX4X1,BINVERTER,BINADDER,BINSUBTRACTOR,
+        DFLIPFLOP,TFLIPFLOP,SRFLIPFLOP,JKFLIPFLOP,
         GNOT, BIN, PRINT, FILE, EXIT
         }
     ignore = '\t '
@@ -34,6 +35,10 @@ class CertaintyLexer(Lexer):
     BINVERTER=r'BINVERTER'
     BINADDER=r'BINADDER'
     BINSUBTRACTOR=r'BINSUBTRACTOR'
+    DFLIPFLOP=r'DFLIPFLOP'
+    TFLIPFLOP=r'TFLIPFLOP'
+    SRFLIPFLOP=r'SRFLIPFLOP'
+    JKFLIPFLOP=r'JKFLIPFLOP'
     
     BIN = r'BIN'
     IF = r'IF'
@@ -82,101 +87,96 @@ class CertaintyParser(Parser):
     def statement(self, p):
         pass
 
-    @_('FILE STRING')
+    @_('FILE STRING') ## Command to open files
     def statement(self, p):
         return ('fileopen', p.STRING)
 
-    @_('PRINT expr')
+    @_('PRINT expr') ## Command to print the output of an expression
     def statement(self, p):
         return ('print_expr', p.expr)
     
-    @_('PRINT condition')
+    @_('PRINT condition') ## Command to print True / False
     def statement(self, p):
         return ('print_cond', p.condition)
 
-    @_('PRINT STRING')
+    @_('PRINT STRING') ## Command to print a String
     def statement(self, p):
         return ('print_str', p.STRING)
 
-    @_('EXIT')
+    @_('EXIT') ## Command to kill the program
     def statement(self, p):
         quit()
 
-    @_('statement ";" statement')
+    @_('statement ";" statement') ## Used to recognise statement seperation in same line
     def statement(self, p):
         return ('statement_set', p.statement0, p.statement1)
 
-    @_('FOR var_assign TO expr "{" statement "}"')
+    @_('FOR var_assign TO expr "{" statement "}"') ## For-Loop Structure
     def statement(self, p):
         return ('for_loop', ('for_loop_setup', p.var_assign, p.expr), p.statement)
 
-    @_('WHILE condition DO "{" statement "}"')
+    @_('WHILE condition DO "{" statement "}"') ## While-Loop Structure
     def statement(self, p):
         return ('while_loop', p.condition, p.statement)
 
-    @_('IF condition THEN "{" statement "}"')
+    @_('IF condition THEN "{" statement "}"') ## If-Then Structure
     def statement(self, p):
         return ('if_stmt_noelse', p.condition, p.statement)
 
-    @_('IF condition THEN "{" statement "}" ELSE "{" statement "}"')
+    @_('IF condition THEN "{" statement "}" ELSE "{" statement "}"') ## If-Else structure
     def statement(self, p):
         return ('if_stmt', p.condition, ('branch', p.statement0, p.statement1))
 
-    @_('FUN NAME "(" ")" ARROW "{" statement "}"')
+    @_('FUN NAME "(" ")" ARROW "{" statement "}"') ## Function Declaration
     def statement(self, p):
         return ('fun_def', p.NAME, p.statement)
 
-    @_('FUN NAME ARROW "{" statement "}"')
+    @_('FUN NAME ARROW "{" statement "}"') ## Function Declaration
     def statement(self, p):
         return ('fun_def', p.NAME, p.statement)
 
-    @_('NAME "(" ")"')
+    @_('NAME "(" ")"') ## Function Call
     def statement(self, p):
         return ('fun_call', p.NAME)
-    @_('NAME ";"')
+    @_('NAME ";"') ## Function Call
     def statement(self, p):
         return ('fun_call', p.NAME)
 
+     ## Conditions
     @_('expr EQEQ expr')
     def condition(self, p):
         return ('condition_eqeq', p.expr0, p.expr1)
-
     @_('expr BIGGEREQ expr')
     def condition(self, p):
         return ('condition_biggereq', p.expr0, p.expr1)
-    
     @_('expr BIGGER expr')
     def condition(self, p):
         return ('condition_bigger', p.expr0, p.expr1)
-
     @_('expr SMALLEREQ expr')
     def condition(self, p):
         return ('condition_smallereq', p.expr0, p.expr1)
-    
     @_('expr SMALLER expr')
     def condition(self, p):
         return ('condition_smaller', p.expr0, p.expr1)
 
+    ## Variable Assignment statements
     @_('var_assign')
     def statement(self, p):
         return p.var_assign
-
     @_('NAME "+" "+"')
     def var_assign(self, p):
         return ('pp_assign', p.NAME)
-
     @_('NAME "+" "=" expr')
     def var_assign(self, p):
         return ('var_assign_plus', p.NAME, p.expr)
-
     @_('NAME "=" expr')
     def var_assign(self, p):
         return ('var_assign', p.NAME, p.expr)
-
     @_('NAME "=" STRING')
     def var_assign(self, p):
         return ('var_assign', p.NAME, p.STRING)
 
+    ## Logic Gate simulation statements
     @_('logic')
     def statement(self, p):
         return (p.logic)
@@ -201,7 +201,8 @@ class CertaintyParser(Parser):
     @_('expr GNOT')
     def logic(self, p):
         return ('gnot', p.expr)
-    
+
+    ## IC simulation statements
     @_('expr "," expr GMUX2X1 expr')
     def logic(self,p):
         return ('gmux2x1',p.expr0,p.expr1,p.expr2)
@@ -217,39 +218,48 @@ class CertaintyParser(Parser):
     @_('expr BINSUBTRACTOR expr')
     def logic(self, p):
         return ('binsubtractor', p.expr0, p.expr1)    
-    
+
+    ## Flip-Flop simulation statements
+    @_('expr DFLIPFLOP expr')
+    def logic(self, p):
+        return ('dff', p.expr0, p.expr1)
+    @_('expr TFLIPFLOP expr')
+    def logic(self, p):
+        return ('tff', p.expr0, p.expr1)
+    @_('expr "," expr SRFLIPFLOP expr')
+    def logic(self,p):
+        return ('srff',p.expr0,p.expr1,p.expr2)
+    @_('expr "," expr JKFLIPFLOP expr')
+    def logic(self,p):
+        return ('jkff',p.expr0,p.expr1,p.expr2)
+
+    ## Convert base-10 integer to binary
     @_('BIN expr')
     def statement(self, p):
         return ('bin', p.expr)
 
+    ## Simple operation statements
     @_('expr')
     def statement(self, p):
         return (p.expr)
-
     @_('expr "+" expr')
     def expr(self, p):
         return ('add', p.expr0, p.expr1)
-
     @_('expr "-" expr')
     def expr(self, p):
         return ('sub', p.expr0, p.expr1)
-
     @_('expr "*" expr')
     def expr(self, p):
         return ('mul', p.expr0, p.expr1)
-
     @_('expr "/" expr')
     def expr(self, p):
         return ('div', p.expr0, p.expr1)
-
     @_('expr "^" expr')
     def expr(self, p):
         return ('pow', p.expr0, p.expr1)
-
     @_('"(" expr ")"')
     def expr(self, p):
         return (p.expr)
-
     @_('"-" expr %prec UMINUS')
     def expr(self, p):
         return ('uminus', p.expr)
@@ -257,11 +267,9 @@ class CertaintyParser(Parser):
     @_('NAME')
     def expr(self, p):
         return ('var', p.NAME)
-
     @_('NUMBER')
     def expr(self, p):
         return ('num', p.NUMBER)
-
     @_('STRING')
     def statement(self, p):
         return ('str', p.STRING)
@@ -387,7 +395,7 @@ class CertaintyExecute:
                 temp=1-(val//10**i)%10
                 new=new+temp*10**i
             return new
-        if node[0]=='binadder' :#adds or subtracts two binary numbers
+        if node[0]=='binadder' :#adds two binary numbers
             val1=self.walkTree(node[1])
             val2=self.walkTree(node[2])
             summ=0#stores the value of the sum
@@ -415,7 +423,20 @@ class CertaintyExecute:
                 car=(t1+t2+car)//2
                 val+=summ*10**i        
             return val%10**i
-        
+
+        if node[0]=='dff':
+            return self.walkTree(node[1])
+        if node[0]=='tff':
+            if self.walkTree(node[1])==0:return self.walkTree(node[2])
+            elif self.walkTree(node[1])==1:return 1-self.walkTree(node[2])
+        if node[0]=='srff' or node[0]=='jkff':
+            print(self.walkTree(node[1]),self.walkTree(node[2]))
+            if self.walkTree(node[1])==0 and self.walkTree(node[2])==0:return self.walkTree(node[3])        
+            elif self.walkTree(node[1])==0 and self.walkTree(node[2])==1:return 0        
+            elif self.walkTree(node[1])==1 and self.walkTree(node[2])==0:return 1
+            elif node[0]=='srff': return -352
+            else: return 1-self.walkTree(node[3])
+
         if node[0] == 'bin':
             val = self.walkTree(node[1])
             binary = bin(val)
@@ -513,6 +534,7 @@ if __name__ == '__main__':
     parser = CertaintyParser()
     env = {}
 
+    ## If executed through terminal with the option of file execution
     if len(sys.argv) > 1:
         try:
             file = open(sys.argv[1], "r")
